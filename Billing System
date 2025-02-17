@@ -1,0 +1,610 @@
+from tkinter import *
+from tkinter import messagebox ##this is for the show a massage masgs 
+import random,os,tempfile,smtplib## to genarate a random numbers but os for create a folder in the file if not exists
+#for the functionality part , tempfile helps to create a temperary file to print the bill content 
+from twilio.rest import Client
+
+def send_bill():
+    def send_whatsapp_message():
+        # Get the bill content from the main textArea
+        bill_content = textArea.get(1.0, END).strip()
+        customer_whatsapp_number = whatsappIdEntry.get().strip()  # Get number from entry field
+
+        if not bill_content:
+            messagebox.showerror('Error', 'Bill is empty! Please generate a bill first.')
+            return
+        
+        if not customer_whatsapp_number:
+            messagebox.showerror('Error', 'Please enter the customer\'s WhatsApp number.')
+            return
+
+        try:
+            # number's format 
+            if not customer_whatsapp_number.startswith('+94'):
+                customer_whatsapp_number = f'+94{customer_whatsapp_number}'
+
+            # Twilio credentials
+            account_sid = '*******************************'
+            auth_token = '********************************'
+            client = Client(account_sid, auth_token)
+
+            # WhatsApp message details
+            from_whatsapp_number = 'whatsapp:+14155238886'  # Twilio sandbox number
+            to_whatsapp_number = f'whatsapp:{customer_whatsapp_number}'  # Use entered number
+
+            message = client.messages.create(
+                from_=from_whatsapp_number,
+                to=to_whatsapp_number,
+                body=f'Hello! Here is your bill:\n\n{bill_content}'
+            )
+
+            messagebox.showinfo("Success", f"WhatsApp message sent successfully to {customer_whatsapp_number}!\nSID: {message.sid}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send WhatsApp message. Error: {e}")
+
+    if textArea.get(1.0, END).strip() == '':
+        messagebox.showerror('Error', 'Bill is empty! Please generate a bill first.')
+    else:
+        # Create a new window for sending via WhatsApp
+        root1 = Toplevel()
+        root1.title('Send the Bill via WhatsApp')
+        root1.config(bg='gray20')
+        root1.resizable(0, 0)
+
+        # Sender's information frame
+        senderFrame = LabelFrame(root1, text='Send the Bill via WhatsApp', font=('Arial', 16, 'bold'), bd=6, bg='gray20', fg='white')
+        senderFrame.grid(row=0, column=0, padx=40, pady=20)
+
+        whatsappIdLabel = Label(senderFrame, text="Customer's WhatsApp Number", font=('Arial', 14, 'bold'), fg='white', bg='gray20')
+        whatsappIdLabel.grid(row=0, column=0, padx=10, pady=7)
+        
+        global whatsappIdEntry  # Make it accessible inside send_whatsapp_message 
+
+        whatsappIdEntry = Entry(senderFrame, font=('Arial', 14, 'bold'), bd=2, width=23, relief=RIDGE)
+        whatsappIdEntry.grid(row=0, column=1, padx=10, pady=7)
+
+        # Recipient's information frame
+        receiverFrame = LabelFrame(root1, text='RECIPIENT', font=('Arial', 16, 'bold'), bd=6, bg='gray20', fg='white')
+        receiverFrame.grid(row=1, column=0, padx=40, pady=20)
+
+        MessageLabel = Label(receiverFrame, text="Here is Generated Bill", font=('Arial', 14, 'bold'), fg='white', bg='gray20')
+        MessageLabel.grid(row=1, column=0, padx=10, pady=7)
+
+        # Message area
+        Email_TextArea = Text(receiverFrame, font=('Arial', 14, 'bold'), bd=2, relief=SUNKEN, width=55, height=11)
+        Email_TextArea.grid(row=2, column=0, columnspan=2)
+        Email_TextArea.delete(1.0, END)
+        Email_TextArea.insert(END, textArea.get(1.0, END).replace('*', '').replace('-', ''))
+
+        # Send button
+        send_button = Button(root1, text='SEND', font=('Arial', 16, 'bold'), width=15, command=send_whatsapp_message)
+        send_button.grid(row=2, column=0, pady=20)
+
+        root1.mainloop()
+
+
+def clear_fields():
+    nameEntry.delete(0, END)
+    phoneEntry.delete(0, END)
+    billEntry.delete(0, END)
+    # Clear all product entries
+    bathSoapEntry.delete(0, END)
+    FacecreamEntry.delete(0, END)
+    FaceWashEntry.delete(0, END)
+    HairsprayEntry.delete(0, END)
+    hairgelEntry.delete(0, END)
+    BodylotionEntry.delete(0, END)
+    riceEntry.delete(0, END)
+    oilEntry.delete(0, END)
+    daalEntry.delete(0, END)
+    WheatEntry.delete(0, END)
+    sugarEntry.delete(0, END)
+    teaEntry.delete(0, END)
+    mazzaEntry.delete(0, END)
+    papsiEntry.delete(0, END)
+    spriteEntry.delete(0, END)
+    dewEntry.delete(0, END)
+    frootyEntry.delete(0, END)
+    cocacolaEntry.delete(0, END)
+    # Clear price and tax entries
+    cosmeticpriceEntry.delete(0, END)
+    grocersypriceEntry.delete(0, END)
+    DrinkspriceEntry.delete(0, END)
+    cosmeticTaxEntry.delete(0, END)
+    grocersyTaxEntry.delete(0, END)
+    DrinksTaxEntry.delete(0, END)
+    # Clear the text area
+    textArea.delete(1.0, END)
+
+
+
+def print_bill():
+        if textArea.get(1.0,END)== '\n' :
+                messagebox.showerror('Error','Bill is Empty')
+        else:
+                file = tempfile.mktemp('.txt')
+                open(file,'w').write(textArea.get(1.0,END))
+                os.startfile(file,'print')
+
+#this is for create a file if not exists 
+if not os.path.exists('bills'):
+    os.mkdir('bills')
+
+# Initialize a random bill number
+bill_number = random.randint(500, 1000)
+
+def search_bill():
+    
+    for i in os.listdir('bills'):
+        # Compare the bill number (from the filename) with the input
+        if i.split('.')[0] == billEntry.get():
+            # Open the file with the corrected path
+            with open(f'bills/{i}', 'r') as f:
+                textArea.delete(1.0, END)
+                # Insert the data from the file into the text area
+                for data in f:
+                    textArea.insert(END, data)
+                break
+    else:
+        messagebox.showerror('Error', 'Invalid Bill Number')
+
+def save_bill():
+    global bill_number
+    result = messagebox.askyesno('Confirmation', 'Do you want to save the bill?')
+    if result:
+        # Get the content from the text area
+        bill_content = textArea.get(1.0, END)
+        with open(f'bills/{bill_number}.txt', 'w') as file:#'w' means to store the file in the write mode
+            file.write(bill_content)
+            messagebox.showinfo('Success', f'Bill Number {bill_number} is saved successfully')
+        # Generate a new random bill number
+        bill_number = random.randint(500, 1000)
+        # Clear the text area
+        textArea.delete(1.0, END)
+
+def bill_area():
+         if nameEntry.get() == '' or phoneEntry.get()== '':
+                 messagebox.showerror('Error','Customer Details Are Required')
+         elif cosmeticpriceEntry.get() == '' and grocersypriceEntry.get() == '' and DrinkspriceEntry.get() == '':
+                 messagebox.showerror('Error','No Product are Selected')
+         elif cosmeticpriceEntry.get() == '0 Rs' and grocersypriceEntry.get() == '0 Rs' and DrinkspriceEntry.get() == '0 Rs':
+                 messagebox.showerror('Error','No Product are Selected')
+                 textArea.delete(1.0,END)
+         else:
+
+                textArea.insert(END,'\t \t*****WELCOME Customer*****\n')
+                textArea.insert(END,f'\n Bill Number: {bill_number}')
+                textArea.insert(END,f'\n Customer Name: {nameEntry.get()}')
+                textArea.insert(END,f'\n Customer Phone Number: {phoneEntry.get()}')
+                textArea.insert(END,f'\n ------------------------------------------------------')
+                textArea.insert(END,f'\n PRODUCT\t\tQUANTITY \t\t PRICE')
+                textArea.insert(END,f'\n ------------------------------------------------------\n')
+                if bathSoapEntry.get()!='0':#  .get method give in form of string
+                        textArea.insert(END,f'Bath Soap\t\t{bathSoapEntry.get()}\t\t{soapValue} Rs \n')
+                if FacecreamEntry.get()!='0':
+                        textArea.insert(END,f'Face Cream\t\t{FacecreamEntry.get()}\t\t{facecreamValue} Rs\n')
+                if FaceWashEntry.get()!='0':
+                        textArea.insert(END,f'Face Wash\t\t{FaceWashEntry.get()}\t\t{facewashValue} Rs\n')
+                if HairsprayEntry.get()!='0':
+                        textArea.insert(END,f'Hair Spray\t\t{HairsprayEntry.get()}\t\t{HairsprayValue} Rs\n')
+                if hairgelEntry.get()!='0':
+                        textArea.insert(END,f'Hair Gel \t\t{hairgelEntry.get()}\t\t{hairgelValue} Rs\n')
+                if BodylotionEntry.get()!='0':
+                        textArea.insert(END,f'Body Lotion\t\t{BodylotionEntry.get()}\t\t{BodylotionValue} Rs\n')
+                
+                #grocery 
+                if riceEntry.get()!='0':
+                        textArea.insert(END,f'Rice\t\t{riceEntry.get()}\t\t{riceValue} Rs\n')
+                if oilEntry.get()!='0':
+                        textArea.insert(END,f'Oil\t\t{oilEntry.get()}\t\t{oilValue} Rs\n')
+                if daalEntry.get()!='0':
+                        textArea.insert(END,f'Daal\t\t{daalEntry.get()}\t\t{daalVaue} Rs\n')
+                if WheatEntry.get()!='0':
+                        textArea.insert(END,f'Wheat \t\t{WheatEntry.get()}\t\t{wheatValue} Rs\n')
+                if sugarEntry.get()!='0':
+                        textArea.insert(END,f'Sugar\t\t{sugarEntry.get()}\t\t{sugarValue} Rs\n')
+                if teaEntry.get()!='0':
+                        textArea.insert(END,f'Tea\t\t{teaEntry.get()}\t\t{teaValue} Rs\n')
+                
+                #drinks
+                if mazzaEntry.get()!='0':
+                        textArea.insert(END,f'Mazza\t\t{mazzaEntry.get()}\t\t{mazzaValue} Rs\n')
+                if papsiEntry.get()!='0':
+                        textArea.insert(END,f'Papsi\t\t{papsiEntry.get()}\t\t{papsiValue} Rs\n')
+                if dewEntry.get()!='0':
+                        textArea.insert(END,f'Dew\t\t{dewEntry.get()}\t\t{dewValue} Rs\n')
+                if frootyEntry.get()!='0':
+                        textArea.insert(END,f'Frooty\t\t{frootyEntry.get()}\t\t{frootyValue} Rs\n')
+                if cocacolaEntry.get()!='0':
+                        textArea.insert(END,f'Coco Cola\t\t{cocacolaEntry.get()}\t\t{cocacolaValue} Rs\n')
+                if spriteEntry.get()!='0':
+                        textArea.insert(END,f'Sprite \t\t{spriteEntry.get()}\t\t{spriteValue} Rs\n')
+                
+                textArea.insert(END,f'\n ------------------------------------------------------\n')
+                
+                if cosmeticTaxEntry.get() !='0.0 Rs':
+                        textArea.insert(END,f'\n Cosmetic Tax\t\t\t{cosmeticTaxEntry.get()}')
+                if grocersyTaxEntry.get() !='0.0 Rs':
+                        textArea.insert(END,f'\n Grocery Tax\t\t\t{grocersyTaxEntry.get()}')
+                if DrinksTaxEntry.get() !='0.0 Rs':
+                        textArea.insert(END,f'\n Cool Drinks Tax\t\t\t{DrinksTaxEntry.get()}')
+                textArea.insert(END,f'\n Total Bill \t\t\t {total_Bill}')
+                textArea.insert(END,f'\n ------------------------------------------------------\n')
+                save_bill()
+                
+
+def Total():
+
+#for the cosmetic pricing 
+ global soapValue, facecreamValue,facewashValue,HairsprayValue,hairgelValue,BodylotionValue
+ global  riceValue,oilValue,daalVaue,wheatValue,sugarValue,teaValue
+ global  mazzaValue,papsiValue,spriteValue,dewValue,frootyValue,cocacolaValue
+ global total_Bill
+
+ soapValue = int (bathSoapEntry.get())*20
+ facecreamValue = int (FacecreamEntry.get())*40
+ facewashValue = int (FaceWashEntry.get())*50
+ HairsprayValue = int (HairsprayEntry.get())*100
+ hairgelValue = int (hairgelEntry.get())*900
+ BodylotionValue = int (BodylotionEntry.get())*200
+ totalcosmeticprice = soapValue+facecreamValue+facewashValue+HairsprayValue+hairgelValue+BodylotionValue
+ cosmeticpriceEntry.delete(0,END)#to stop printing the the value multiple times 
+ cosmeticpriceEntry.insert(0,f'{totalcosmeticprice} Rs')
+ #for the  tax 
+ cosmeticTax = totalcosmeticprice *0.12
+ cosmeticTaxEntry.delete(0,END)
+ cosmeticTaxEntry.insert(0,f'{cosmeticTax} Rs')
+
+
+ #for the grocery price 
+ riceValue= int(riceEntry.get())*210
+ oilValue= int(oilEntry.get())*410
+ daalVaue = int (daalEntry.get())*220
+ wheatValue =int (WheatEntry.get())*90
+ sugarValue = int (sugarEntry.get())*55
+ teaValue = int (teaEntry.get())*50
+ totalgroseryprice = riceValue+oilValue+daalVaue+wheatValue+sugarValue+teaValue
+ grocersypriceEntry.delete(0,END)
+ grocersypriceEntry.insert(0,f'{totalgroseryprice} Rs')
+
+ #for the  tax 
+ grocerytax = totalgroseryprice *0.8
+ grocersyTaxEntry.delete(0,END)
+ grocersyTaxEntry.insert(0,f'{grocerytax} Rs')
+
+
+
+ #for the cool drike pricing 
+ mazzaValue = int(mazzaEntry.get())*150
+ papsiValue = int(papsiEntry.get())*120
+ spriteValue = int(papsiEntry.get())*160
+ dewValue = int(dewEntry.get())*150
+ frootyValue = int(frootyEntry.get())*190
+ cocacolaValue = int(cocacolaEntry.get())*200
+ totalcooldrinkprice = mazzaValue+papsiValue+spriteValue+dewValue+frootyValue+cocacolaValue
+ DrinkspriceEntry.delete(0,END)
+ DrinkspriceEntry.insert(0,f'{totalcooldrinkprice} Rs')
+
+ #for the  tax 
+ cooldrinktax = totalcooldrinkprice *0.1
+ DrinksTaxEntry.delete(0,END)
+ DrinksTaxEntry.insert(0,f'{cooldrinktax} Rs')
+ # calculation for the total bill amount 
+ total_Bill=totalgroseryprice+totalcosmeticprice+totalcooldrinkprice+cosmeticTax+grocerytax+cooldrinktax
+
+
+
+
+## end of the function part 
+
+
+
+#graphical user interface
+#to create object inside 
+root = Tk()
+root.title('The retail Billing system ')#to the title 
+root.geometry('1278x685')#to the size 
+#to-do icon 
+
+
+
+#for the widget
+#label 1 the heading 
+#for the colors go to the web and search the colors tkinter color
+#fg is the font color 
+#there are many relief which is the systing for the top box 
+headingLabel = Label(root,text='Retail Billing System',font=('times new roman',30,'bold'),
+bg='gray20',fg='gold' ,bd=20, relief=GROOVE)
+headingLabel.pack(fill=X,pady=10) #to the top 
+
+
+
+#frame 1 the customer details 
+customer_detail_frame = LabelFrame(root,text='Customer Details',font=('times new roman',15,'bold')
+,fg='gold',bd=9,relief=GROOVE,bg='gray20')
+customer_detail_frame.pack(fill=X)
+#label 1 
+name_label = Label(customer_detail_frame,text='Name',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+name_label.grid(row=0,column=0,padx=20,pady=5)#position in  row and column 
+# from the label here  is the entry feild for the name label 
+nameEntry=Entry(customer_detail_frame,font=('arial',15),bd=4,width=19)
+nameEntry.grid(row=0,column=1,padx=9)
+
+
+#label 2 phone label 
+phone_label = Label(customer_detail_frame,text='Phone Number',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+phone_label.grid(row=0,column=2,padx=20)#position in  row and column 
+# from the label here  is the entry feild for the phone label 
+phoneEntry=Entry(customer_detail_frame,font=('arial',15),bd=4,width=19)
+phoneEntry.grid(row=0,column=3,padx=9)
+
+
+#label 3 bill number  label 
+bill_label = Label(customer_detail_frame,text='Bill Number',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+bill_label.grid(row=0,column=4,padx=20,pady=5)#position in  row and column 
+# from the label here  is the entry feild for the bill  label 
+billEntry=Entry(customer_detail_frame,font=('arial',15),bd=4,width=19)
+billEntry.grid(row=0,column=5,padx=20,pady=7)
+
+
+#here is the search button 
+searchButton = Button(customer_detail_frame,text='SEARCH',font=('arial',12,'bold'),bd=7,width=10,
+command=search_bill) 
+searchButton.grid(row=0,column=6,padx=10)
+
+
+##the second frame 
+ProductFrame=Frame(root)
+ProductFrame.pack(fill=X)
+##framelabel 1
+cosmeticFrame = LabelFrame(ProductFrame,text='Cosmetics',font=('times new roman',15,'bold')
+,fg='gold',bd=9,relief=GROOVE,bg='gray20')
+cosmeticFrame.grid(row=0,column=0)
+#the labels and Entries 
+        #bathsoap
+bathSoapLabel = Label(cosmeticFrame,text='Bath Soap' ,font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+bathSoapLabel.grid(row=0,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+bathSoapEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+bathSoapEntry.grid(row=0,column=1,pady=9,padx=10)
+bathSoapEntry.insert(0,0)
+        #facecream 
+FacecreamLabel = Label(cosmeticFrame,text='Face Cream',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+FacecreamLabel.grid(row=1,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+FacecreamEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+FacecreamEntry.grid(row=1,column=1,pady=9,padx=10)
+FacecreamEntry.insert(0,0)
+        #facewash
+FaceWashLabel = Label(cosmeticFrame,text='Face Wash',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+FaceWashLabel.grid(row=2,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+FaceWashEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+FaceWashEntry.grid(row=2,column=1,pady=9,padx=10)
+FaceWashEntry.insert(0,0)
+
+        #hairspray
+HairsprayLabel = Label(cosmeticFrame,text='Hair Spray',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+HairsprayLabel.grid(row=3,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+HairsprayEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+HairsprayEntry.grid(row=3,column=1,pady=9,padx=10)
+HairsprayEntry.insert(0,0)
+        #Hair Gel
+hairgelLabel = Label(cosmeticFrame,text='Hair Gel',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+hairgelLabel.grid(row=4,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+hairgelEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+hairgelEntry.grid(row=4,column=1,pady=9,padx=10)
+hairgelEntry.insert(0,0)
+        #body Lotion
+BodylotionLabel = Label(cosmeticFrame,text='Body Lotion',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+BodylotionLabel.grid(row=5,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+BodylotionEntry= Entry(cosmeticFrame,font=('arial',15,'bold'),bd=4,width=10)
+BodylotionEntry.grid(row=5,column=1,pady=9,padx=10)
+BodylotionEntry.insert(0,0)
+
+
+##frame 2
+groseryFrame = LabelFrame(ProductFrame,text='Grocery',font=('times new roman',15,'bold')
+,fg='gold',bd=9,relief=GROOVE,bg='gray20')
+groseryFrame.grid(row=0,column=1)
+
+        #rice
+riceLabel = Label(groseryFrame,text='Rice',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+riceLabel.grid(row=0,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+riceEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+riceEntry.grid(row=0,column=1,pady=9,padx=10)
+riceEntry.insert(0,0)
+        #Oil
+oilLabel = Label(groseryFrame,text='Oil',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+oilLabel.grid(row=1,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+oilEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+oilEntry.grid(row=1,column=1,pady=9,padx=10)
+oilEntry.insert(0,0)
+        #Dal
+daalLabel = Label(groseryFrame,text='Daal',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+daalLabel.grid(row=2,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+daalEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+daalEntry.grid(row=2,column=1,pady=9,padx=10)
+daalEntry.insert(0,0)
+        #wheat
+WheatLabel = Label(groseryFrame,text='Wheat',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+WheatLabel.grid(row=3,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+WheatEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+WheatEntry.grid(row=3,column=1,pady=9,padx=10)
+WheatEntry.insert(0,0)
+        #sugar
+sugarLabel = Label(groseryFrame,text='Sugar',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+sugarLabel.grid(row=4,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+sugarEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+sugarEntry.grid(row=4,column=1,pady=9,padx=10)
+sugarEntry.insert(0,0)
+        #tea
+teaLabel = Label(groseryFrame,text='Tea',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+teaLabel.grid(row=5,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+teaEntry= Entry(groseryFrame,font=('arial',15,'bold'),bd=4,width=10)
+teaEntry.grid(row=5,column=1,pady=9,padx=10)
+teaEntry.insert(0,0)
+##frame 2
+cooldrinksFrame = LabelFrame(ProductFrame,text='Cool Drinks',font=('times new roman',15,'bold')
+,fg='gold',bd=9,relief=GROOVE,bg='gray20')
+cooldrinksFrame.grid(row=0,column=2)
+
+        #Mazza
+mazzaLabel = Label(cooldrinksFrame,text='Mazza',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+mazzaLabel.grid(row=0,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+mazzaEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+mazzaEntry.grid(row=0,column=1,pady=9,padx=10)
+mazzaEntry.insert(0,0)
+        #papsi
+papsiLabel = Label(cooldrinksFrame,text='Papsi',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+papsiLabel.grid(row=1,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+papsiEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+papsiEntry.grid(row=1,column=1,pady=9,padx=10) 
+papsiEntry.insert(0,0)
+
+        #Sprite
+spriteLabel = Label(cooldrinksFrame,text='Sprite',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+spriteLabel.grid(row=2,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+spriteEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+spriteEntry.grid(row=2,column=1,pady=9,padx=10)
+spriteEntry.insert(0,0)
+
+        #dew
+dewLabel = Label(cooldrinksFrame,text='Dew',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+dewLabel.grid(row=3,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+dewEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+dewEntry.grid(row=3,column=1,pady=9,padx=10)
+dewEntry.insert(0,0)
+
+        #frooty
+frootyLabel = Label(cooldrinksFrame,text='Frooty',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+frootyLabel.grid(row=4,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+frootyEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+frootyEntry.grid(row=4,column=1,pady=9,padx=10)
+frootyEntry.insert(0,0)
+
+        #cocacola
+cocacolaLabel = Label(cooldrinksFrame,text='Cocacola',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+cocacolaLabel.grid(row=5,column=0,pady=9,padx=10,sticky='w')#to aign the text left 
+cocacolaEntry= Entry(cooldrinksFrame,font=('arial',15,'bold'),bd=4,width=10)
+cocacolaEntry.grid(row=5,column=1,pady=9,padx=10)
+cocacolaEntry.insert(0,0)
+
+#frame 3 
+billingframe =  Frame(ProductFrame,bd=9,relief=GROOVE)
+billingframe.grid(row=0,column=3,padx=15)
+billareaLabel =  Label(billingframe,text='Billing  Area',font=('times new roman',15,'bold'),bd=7,relief=GROOVE)
+billareaLabel.pack(fill=X)
+
+scrallbar = Scrollbar(billingframe,orient=VERTICAL)
+scrallbar.pack(side=RIGHT,fill=Y)
+#text area
+textArea = Text(billingframe,height=19,width=55,yscrollcommand=scrallbar.set)
+textArea.pack()
+scrallbar.config(command=textArea.yview)#to view the upper view 
+
+
+#bill meanu frame
+ 
+billmenuFrame = LabelFrame(root,text='Bill Menu',font=('times new roman',15,'bold')
+,fg='gold',bd=9,relief=GROOVE,bg='gray20')
+billmenuFrame.pack(fill=X)
+        #cusmetic
+cosmeticpriceLabel = Label(billmenuFrame,text='Cosmetic Price',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+cosmeticpriceLabel.grid(row=0,column=0,pady=6,padx=10,sticky='w')#to aign the text left 
+cosmeticpriceEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+cosmeticpriceEntry.grid(row=0,column=1,pady=6,padx=10)
+
+
+        #grocery
+grocersypriceLabel = Label(billmenuFrame,text='Grocersy Price',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+grocersypriceLabel.grid(row=1,column=0,pady=6,padx=10,sticky='w')#to aign the text left 
+grocersypriceEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+grocersypriceEntry.grid(row=1,column=1,pady=6,padx=10)
+
+
+        #Drinks
+DrinkspriceLabel = Label(billmenuFrame,text='Drinks Price',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+DrinkspriceLabel.grid(row=2,column=0,pady=6,padx=10,sticky='w')#to aign the text left 
+DrinkspriceEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+DrinkspriceEntry.grid(row=2,column=1,pady=6,padx=10)
+
+
+#for the tax 
+        #cusmetic
+cosmeticTaxLabel = Label(billmenuFrame,text='Cosmetic Tax',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+cosmeticTaxLabel.grid(row=0,column=2,pady=6,padx=10,sticky='w')#to aign the text left 
+cosmeticTaxEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+cosmeticTaxEntry.grid(row=0,column=3,pady=6,padx=10)
+
+
+        #grocery
+grocersyTaxLabel = Label(billmenuFrame,text='Grocersy Tax',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+grocersyTaxLabel.grid(row=1,column=2,pady=6,padx=10,sticky='w')#to aign the text left 
+grocersyTaxEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+grocersyTaxEntry.grid(row=1,column=3,pady=6,padx=10)
+
+
+        #Drinks
+DrinksTaxLabel = Label(billmenuFrame,text='Drinks Tax',font=('times new roman',15,'bold'),
+fg='white',bg='gray20')
+DrinksTaxLabel.grid(row=2,column=2,pady=6,padx=10,sticky='w')#to aign the text left 
+DrinksTaxEntry= Entry(billmenuFrame,font=('arial',12,'bold'),bd=4,width=10)
+DrinksTaxEntry.grid(row=2,column=3,pady=6,padx=10)
+
+##fror the button 
+buttonFrame = Frame(billmenuFrame,bd=7,relief=GROOVE)
+buttonFrame.grid(row=0,column=4,rowspan=3)
+
+
+totalbutton = Button(buttonFrame,text='Total',font=('arial',15,'bold'),bg='gray20',fg='white',
+bd=5,width=7,pady=10,command=Total)
+totalbutton.grid(row=0,column=0,padx=5,pady=20)
+
+
+billbutton = Button(buttonFrame,text='Bill',font=('arial',15,'bold'),bg='gray20',fg='white',
+bd=5,width=7,pady=10,command=bill_area)
+billbutton.grid(row=0,column=1,padx=5,pady=20)
+
+
+whatsapbutton = Button(buttonFrame,text='Whatsapp',font=('arial',15,'bold'),bg='gray20',fg='white',
+bd=5,width=7,pady=10,command=send_bill)
+whatsapbutton.grid(row=0,column=2,padx=5,pady=20)
+
+
+Printbutton = Button(buttonFrame,text='Print',font=('arial',15,'bold'),bg='gray20',fg='white',
+bd=5,width=7,pady=10,command=print_bill)
+Printbutton.grid(row=0,column=3,padx=5,pady=20)
+
+Clearbutton = Button(buttonFrame,text='Clear',font=('arial',15,'bold'),bg='gray20',fg='white',
+bd=5,width=7,pady=10,command=clear_fields)
+Clearbutton.grid(row=0,column=4,padx=5,pady=20)
+
+
+
+root.mainloop() #to view thewindow 
+
